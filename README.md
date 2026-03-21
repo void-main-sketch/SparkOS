@@ -66,9 +66,6 @@
 - **WiFi Reset** – Clear stored credentials and restart configuration portal
 - **NTP Update** – Automatic time sync every 60 seconds
 
-## 📸 Screenshots
-
-*(Add images of your OLED display showing main menu, games, etc.)*
 
 ## 🤝 Contributing
 
