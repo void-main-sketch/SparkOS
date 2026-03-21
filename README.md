@@ -1,6 +1,3 @@
-Here's a GitHub description for your SparkOS firmware:
-
----
 
 # SparkOS - Lightweight Embedded Operating System for ESP8266 & ESP32-S3
 
@@ -62,16 +59,6 @@ Here's a GitHub description for your SparkOS firmware:
 | Select / Enter | EXIT |
 | Exit to Menu | EXIT (in games/apps) |
 
-## 📁 Repository Structure
-
-```
-SparkOS/
-├── esp8266/
-│   └── SparkOS_ESP8266.ino    # Main firmware for ESP8266
-├── esp32-s3/
-│   └── SparkOS_ESP32-S3.ino   # ESP32-S3 version
-└── README.md
-```
 
 ## 🔧 Configuration
 
