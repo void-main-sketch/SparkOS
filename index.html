@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYBERPUNK // ESP FLASHER CORES</title>
-    <!-- Подключение официального скрипта ESP Web Tools -->
-    <script type="module" src="https://unpkg.com"></script>
+    <title>CYBERPUNK // ESP DIRECT FLASHER</title>
+    <!-- Официальная библиотека для прямой низкоуровневой прошивки через Web Serial -->
+    <script src="https://unpkg.com"></script>
     <style>
         :root {
             --bg-cyber: #05050d;
             --neon-blue: #00f0ff;
             --neon-purple: #9d4edd;
             --neon-red: #ff0055;
-            --panel-bg: rgba(13, 11, 26, 0.75);
+            --neon-green: #39ff14;
+            --panel-bg: rgba(13, 11, 26, 0.85);
             --panel-border: #241942;
             --text-cyber: #e2e8f0;
             --font-mono: 'Courier New', Courier, monospace;
@@ -22,8 +23,8 @@
             font-family: 'Segoe UI', Roboto, sans-serif;
             background-color: var(--bg-cyber);
             background-image: 
-                radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(255, 0, 85, 0.05) 0%, transparent 40%);
+                radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.07) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 85, 0.07) 0%, transparent 40%);
             color: var(--text-cyber);
             margin: 0;
             padding: 20px;
@@ -38,22 +39,18 @@
         .cyber-panel {
             background: var(--panel-bg);
             backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
             border: 2px solid var(--panel-border);
             border-radius: 4px;
             padding: 40px;
             width: 100%;
             max-width: 460px;
             position: relative;
-            box-shadow: 
-                0 0 30px rgba(157, 78, 221, 0.15),
-                inset 0 0 15px rgba(0, 240, 255, 0.05);
+            box-shadow: 0 0 30px rgba(157, 78, 221, 0.15);
             clip-path: polygon(0 0, 93% 0, 100% 7%, 100% 100%, 7% 100%, 0 93%);
         }
 
-        /* Декоративные углы в стиле интерфейсов */
         .cyber-panel::before {
-            content: 'SYS.LOC // 0x7F';
+            content: 'NET.DIRECT // 2026';
             position: absolute;
             top: 8px;
             right: 40px;
@@ -68,19 +65,14 @@
             font-size: 24px;
             font-weight: 900;
             margin: 0 0 6px 0;
-            text-align: left;
             text-transform: uppercase;
             letter-spacing: 3px;
-            color: #fff;
-            text-shadow: 
-                0 0 10px var(--neon-blue),
-                0 0 20px rgba(0, 240, 255, 0.5);
+            text-shadow: 0 0 10px var(--neon-blue);
         }
 
         .status-grid {
             display: flex;
             justify-content: space-between;
-            align-items: center;
             font-family: var(--font-mono);
             font-size: 11px;
             color: var(--neon-blue);
@@ -92,23 +84,23 @@
         .status-dot {
             width: 6px;
             height: 6px;
-            background-color: var(--neon-red);
+            background-color: var(--neon-purple);
             border-radius: 50%;
             display: inline-block;
             margin-right: 6px;
+            box-shadow: 0 0 8px var(--neon-purple);
+        }
+        
+        .status-dot.active {
+            background-color: var(--neon-red);
             box-shadow: 0 0 8px var(--neon-red);
-            animation: pulse 1.5s infinite;
+            animation: pulse 1s infinite;
         }
 
-        @keyframes pulse {
-            0% { opacity: 0.4; }
-            50% { opacity: 1; }
-            100% { opacity: 0.4; }
-        }
+        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
 
         .form-group {
-            margin-bottom: 35px;
-            position: relative;
+            margin-bottom: 30px;
         }
 
         label {
@@ -122,16 +114,13 @@
             margin-bottom: 10px;
         }
 
-        .select-wrapper {
-            position: relative;
-        }
+        .select-wrapper { position: relative; }
 
         select {
             width: 100%;
             padding: 14px 16px;
             background-color: rgba(20, 16, 38, 0.9);
             border: 1px solid var(--neon-purple);
-            border-radius: 0;
             color: var(--neon-blue);
             font-family: var(--font-mono);
             font-size: 14px;
@@ -140,9 +129,7 @@
             box-sizing: border-box;
             text-transform: uppercase;
             letter-spacing: 1px;
-            transition: all 0.3s ease;
             -webkit-appearance: none;
-            -moz-appearance: none;
             appearance: none;
         }
 
@@ -161,76 +148,126 @@
             pointer-events: none;
         }
 
-        /* Кастомизация веб-компонента ESP Web Tools под киберпанк */
-        esp-web-install-button {
-            display: block;
+        /* Кнопка ПРОШИТЬ в стиле Киберпанк */
+        .cyber-btn {
             width: 100%;
-            font-family: var(--font-mono) !important;
-            --ewt-button-bg-color: transparent;
-            --ewt-button-hover-bg-color: transparent;
-            --ewt-button-text-color: #ffffff;
-        }
-
-        /* Кастомный хак для стилизации внутренней кнопки тега через CSS-переменные и фильтры */
-        #flash-container {
+            padding: 16px;
+            background: transparent;
             border: 1px solid var(--neon-red);
-            padding: 2px;
-            background: linear-gradient(135deg, var(--neon-red) 0%, #9d4edd 100%);
-            transition: all 0.3s ease;
+            color: #fff;
+            font-family: var(--font-mono);
+            font-size: 15px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            position: relative;
             box-shadow: 0 0 15px rgba(255, 0, 85, 0.2);
+            transition: all 0.3s ease;
+            background-image: linear-gradient(135deg, rgba(255, 0, 85, 0.1) 0%, rgba(157, 78, 221, 0.1) 100%);
         }
 
-        #flash-container:hover {
-            box-shadow: 0 0 25px rgba(255, 0, 85, 0.5);
-            transform: scale(1.01);
+        .cyber-btn:hover:not(:disabled) {
+            box-shadow: 0 0 25px rgba(255, 0, 85, 0.6);
+            background-image: linear-gradient(135deg, rgba(255, 0, 85, 0.3) 0%, rgba(157, 78, 221, 0.3) 100%);
+            color: var(--neon-blue);
         }
 
-        #flash-container esp-web-install-button::part(button) {
-            background-color: #0d0b1a !important;
-            border-radius: 0px !important;
-            padding: 16px !important;
-            text-transform: uppercase !important;
-            letter-spacing: 2px !important;
-            font-weight: 900 !important;
-            transition: all 0.2s ease !important;
-            border: none !important;
+        .cyber-btn:disabled {
+            border-color: var(--panel-border);
+            color: #4a4a5a;
+            box-shadow: none;
+            background: rgba(10, 10, 20, 0.5);
+            cursor: not-allowed;
+        }
+
+        /* Секция прогресса и логов */
+        .progress-section {
+            margin-top: 35px;
+            display: none; /* Появляется только при старте */
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            margin-bottom: 8px;
+            color: var(--neon-blue);
+        }
+
+        .cyber-progress-bar {
             width: 100%;
+            height: 10px;
+            background-color: rgba(20, 16, 38, 0.9);
+            border: 1px solid var(--panel-border);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
         }
 
-        #flash-container esp-web-install-button::part(button):hover {
-            color: var(--neon-blue) !important;
-            background-color: rgba(20, 16, 38, 0.5) !important;
+        .cyber-progress-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-purple), var(--neon-blue));
+            box-shadow: 0 0 10px var(--neon-blue);
+            transition: width 0.2s ease;
+        }
+
+        #terminal-log {
+            width: 100%;
+            height: 110px;
+            background-color: #030307;
+            border: 1px solid var(--panel-border);
+            padding: 12px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--neon-green);
+            overflow-y: auto;
+            white-space: pre-wrap;
+            box-sizing: border-box;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
         }
     </style>
 </head>
 <body>
 
 <div class="cyber-panel">
-    <h1>Flasher // OS</h1>
+    <h1>FLASHER // OS</h1>
     <div class="status-grid">
-        <div><span class="status-dot"></span>CORE_STATUS: ONLINE</div>
-        <div>NET_SPEED: MAXIMUM</div>
+        <div><span id="dot-indicator" class="status-dot"></span>SYS_STATUS: <span id="panel-status-text">READY</span></div>
+        <div>LINK: WEB_SERIAL</div>
     </div>
 
     <div class="form-group">
-        <label for="board-select">Select Target Hardware</label>
+        <label for="board-select">Select Hardware Core</label>
         <div class="select-wrapper">
             <select id="board-select">
-                <option value="esp32s3">ESP32-S3 CORE (1 BIN)</option>
-                <option value="esp8266">ESP8266 CORE (1 BIN)</option>
+                <option value="esp32s3">ESP32-S3 CORE (0x0000)</option>
+                <option value="esp8266">ESP8266 CORE (0x0000)</option>
             </select>
         </div>
     </div>
 
-    <!-- Контейнер-рамка для кастомизации кнопки -->
-    <div id="flash-container">
-        <esp-web-install-button id="install-btn"></esp-web-install-button>
+    <!-- Настоящая кнопка прошивки -->
+    <button id="flash-btn" class="cyber-btn">Initialize Flash</button>
+
+    <!-- Выезжающий неоновый прогресс-бар -->
+    <div id="progress-area" class="progress-section">
+        <div class="progress-info">
+            <span id="task-status">DOWNLOADING...</span>
+            <span id="percent-counter">0%</span>
+        </div>
+        <div class="cyber-progress-bar">
+            <div id="progress-fill" class="cyber-progress-fill"></div>
+        </div>
+        <div id="terminal-log">System initialized. Awaiting firmware cache...</div>
     </div>
 </div>
 
 <script>
     // =========================================================================
-    // ССЫЛКИ НА .BIN ФАЙЛЫ (Вставь сюда прямые адреса своих прошивок)
+    // ВСТАВЬТЕ СЮДА ВАШИ ССЫЛКИ НА .BIN ФАЙЛЫ
     // =========================================================================
     const FIRMWARE_LINKS = {
         esp32s3: "https://github.com/void-main-sketch/SparkOS/raw/refs/heads/main/firmware/esp32-S3-SparkOS/build/esp32-S3-SparkOS.bin", 
@@ -238,36 +275,106 @@
     };
     // =========================================================================
 
+    const flashBtn = document.getElementById('flash-btn');
     const boardSelect = document.getElementById('board-select');
-    const installBtn = document.getElementById('install-btn');
+    const progressArea = document.getElementById('progress-area');
+    const progressFill = document.getElementById('progress-fill');
+    const percentCounter = document.getElementById('percent-counter');
+    const taskStatus = document.getElementById('task-status');
+    const terminalLog = document.getElementById('terminal-log');
+    const dotIndicator = document.getElementById('dot-indicator');
+    const panelStatusText = document.getElementById('panel-status-text');
 
-    function updateManifest() {
-        const selectedBoard = boardSelect.value;
-        const binUrl = FIRMWARE_LINKS[selectedBoard];
-
-        // Структура манифеста для ESP Web Tools
-        const manifest = {
-            name: "CYBER_" + selectedBoard.toUpperCase(),
-            version: "X-2026",
-            builds: [
-                {
-                    chipFamily: selectedBoard === "esp8266" ? "ESP8266" : "ESP32-S3",
-                    parts: [
-                        { path: binUrl, offset: 0 } // Прямая запись single-bin
-                    ]
-                }
-            ]
-        };
-
-        // Генерация виртуального Blob-файла манифеста во избежание CORS ошибок fetch
-        const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-        installBtn.manifest = URL.createObjectURL(manifestBlob);
+    function printTerminal(msg) {
+        terminalLog.innerText += `\n> ${msg}`;
+        terminalLog.scrollTop = terminalLog.scrollHeight;
     }
 
-    boardSelect.addEventListener('change', updateManifest);
-    
-    // Первичная инициализация при загрузке страницы
-    updateManifest();
+    flashBtn.addEventListener('click', async () => {
+        if (!('serial' in navigator)) {
+            alert('Критическая ошибка: Браузер не поддерживает Web Serial API. Откройте страницу в Chrome или Edge.');
+            return;
+        }
+
+        const selectedBoard = boardSelect.value;
+        const targetUrl = FIRMWARE_LINKS[selectedBoard];
+
+        // Используем прокси, чтобы ПОЛНОСТЬЮ убрать ошибку Failed to fetch
+        const secureProxyUrl = "https://corsproxy.io?" + encodeURIComponent(targetUrl);
+
+        // Переводим интерфейс в состояние загрузки
+        flashBtn.disabled = true;
+        boardSelect.disabled = true;
+        progressArea.style.display = 'block';
+        dotIndicator.classList.add('active');
+        panelStatusText.innerText = "BUSY";
+        terminalLog.innerText = "[SYS] Запуск протокола загрузки...";
+
+        try {
+            printTerminal("Подключение к облаку...");
+            taskStatus.innerText = "DOWNLOADING FMW...";
+            
+            const response = await fetch(secureProxyUrl);
+            if (!response.ok) throw new Error("Сервер не ответил на запрос прошивки.");
+            
+            const arrayBuffer = await response.arrayBuffer();
+            const binaryData = new Uint8Array(arrayBuffer);
+            
+            printTerminal(`Успешно кэшировано: ${binaryData.length} байт.`);
+            printTerminal("Запрос доступа к COM-порту устройства...");
+            taskStatus.innerText = "SELECT COM-PORT...";
+
+            // Открываем порт через библиотеку Espruino
+            Espruino.Core.Serial.open(async (connectionInfo) => {
+                if (!connectionInfo) {
+                    printTerminal("ОТМЕНА: Порт не выбран пользователем.");
+                    resetSystem("PORT ERROR");
+                    return;
+                }
+
+                printTerminal("Порт соединен. Синхронизация чипа...");
+                taskStatus.innerText = "FLASHING...";
+
+                // Шьем single-bin файлы на базовый адрес 0x0
+                const writeOffsetAddress = 0x0000;
+
+                // Запуск процесса прошивки с отслеживанием прогресса в реальном времени
+                Espruino.Core.Flasher.flash(binaryData, writeOffsetAddress, (bytesSent, bytesTotal) => {
+                    const currentPercent = Math.round((bytesSent / bytesTotal) * 100);
+                    
+                    // Обновляем шкалу и проценты прямо на странице
+                    progressFill.style.width = `${currentPercent}%`;
+                    percentCounter.innerText = `${currentPercent}%`;
+                    printTerminal(`Запись блока: ${bytesSent}/${bytesTotal} B`);
+                }, (err) => {
+                    if (err) {
+                        printTerminal(`ОШИБКА ЗАПИСИ: ${err}`);
+                        resetSystem("FAIL");
+                    } else {
+                        progressFill.style.width = '100%';
+                        percentCounter.innerText = '100%';
+                        printTerminal("🎉 УСПЕХ! Прошивка успешно загружена. Устройство перезагружается.");
+                        taskStatus.innerText = "SUCCESS // DONE";
+                        panelStatusText.innerText = "SUCCESS";
+                        dotIndicator.classList.remove('active');
+                        // Оставляем кнопку заблокированной, сигнализируя об успехе
+                    }
+                });
+            });
+
+        } catch (error) {
+            printTerminal(`КРИТИЧЕСКИЙ СБОЙ: ${error.message}`);
+            resetSystem("FETCH ERROR");
+        }
+    });
+
+    function resetSystem(statusLabel) {
+        flashBtn.disabled = false;
+        boardSelect.disabled = false;
+        dotIndicator.classList.remove('active');
+        panelStatusText.innerText = statusLabel;
+        taskStatus.innerText = "INTERRUPTED";
+    }
 </script>
 
 </body>
