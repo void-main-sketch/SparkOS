@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Serial Firmware Loader</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; text-align: center; }
+        .container { max-width: 500px; margin: 0 auto; border: 1px solid #ccc; padding: 20px; border-radius: 8px; }
+        select, button { width: 100%; padding: 10px; margin-top: 10px; cursor: pointer; }
+        button { background-color: #007bff; color: white; border: none; border-radius: 4px; font-size: 16px; }
+        button:disabled { background-color: #ccc; }
+        #status { margin-top: 20px; font-weight: bold; }
+        .log { margin-top: 10px; height: 100px; overflow-y: scroll; background: #f0f0f0; border: 1px solid #ddd; padding: 5px; text-align: left; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Прошивка через COM-порт</h2>
+    
+    <label for="firmwareSelect">Выберите прошивку:</label>
+    <select id="firmwareSelect">
+        <option value="fw1">Прошивка 1 (Основная)</option>
+        <option value="fw2">Прошивка 2 (Резервная)</option>
+    </select>
+
+    <button id="connectBtn">Подключить COM-порт и Прошить</button>
+    
+    <div id="status">Ожидание...</div>
+    <div class="log" id="log"></div>
+</div>
+
+<script>
+    // =============================================
+    // МЕСТО ДЛЯ ВСТАВКИ BIN ФАЙЛОВ (Base64)
+    // =============================================
+    // Используйте онлайн-конвертер "Binary to Base64"
+    const firmwareBinaries = {
+        fw1: "ВСТАВЬТЕ_BASE64_СТРОКУ_ДЛЯ_ФАЙЛА_1_ЗДЕСЬ",
+        fw2: "ВСТАВЬТЕ_BASE64_СТРОКУ_ДЛЯ_ФАЙЛА_2_ЗДЕСЬ"
+    };
+    // =============================================
+
+    const connectBtn = document.getElementById('connectBtn');
+    const statusDiv = document.getElementById('status');
+    const logDiv = document.getElementById('log');
+    const fwSelect = document.getElementById('firmwareSelect');
+
+    let port;
+
+    function log(msg) {
+        logDiv.innerHTML += msg + '<br>';
+        logDiv.scrollTop = logDiv.scrollHeight;
+        console.log(msg);
+    }
+
+    // Конвертация Base64 в ArrayBuffer
+    function base64ToArrayBuffer(base64) {
+        const binaryString = window.atob(base64);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes.buffer;
+    }
+
+    connectBtn.addEventListener('click', async () => {
+        const selectedFw = fwSelect.value;
+        const binData = firmwareBinaries[selectedFw];
+
+        if (binData.startsWith("ВСТАВЬТЕ")) {
+            alert("Пожалуйста, вставьте Base64 данные в код!");
+            return;
+        }
+
+        try {
+            // 1. Запрос порта
+            port = await navigator.serial.requestPort();
+            // 2. Открытие порта (скорость указана 115200)
+            await port.open({ baudRate: 115200 });
+            log("Порт открыт");
+            statusDiv.innerText = "Подключено. Идет прошивка...";
+            connectBtn.disabled = true;
+
+            const writer = port.writable.getWriter();
+            const data = base64ToArrayBuffer(binData);
+            
+            // 3. Отправка данных (базовая реализация)
+            // В реальных условиях нужен протокол (XMODEM/YMODEM)
+            log(`Размер файла: ${data.byteLength} байт`);
+            
+            // Отправка чанками (кусками), чтобы не переполнить буфер
+            const chunkSize = 128;
+            for (let i = 0; i < data.byteLength; i += chunkSize) {
+                const chunk = data.slice(i, i + chunkSize);
+                await writer.write(new Uint8Array(chunk));
+                statusDiv.innerText = `Прошивка: ${Math.round((i/data.byteLength)*100)}%`;
+            }
+
+            log("Данные отправлены.");
+            statusDiv.innerText = "Готово!";
+            
+            writer.releaseLock();
+            await port.close();
+            log("Порт закрыт");
+            connectBtn.disabled = false;
+
+        } catch (e) {
+            log("Ошибка: " + e);
+            statusDiv.innerText = "Ошибка.";
+            connectBtn.disabled = false;
+        }
+    });
+</script>
+
+</body>
+</html>
