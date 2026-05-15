@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYBERPUNK // ESP DIRECT FLASHER</title>
-    <!-- Официальная библиотека для прямой низкоуровневой прошивки через Web Serial -->
+    <title>CYBERPUNK // SPARK-OS FLASHER</title>
+    <!-- Официальная стабильная библиотека для прямой низкоуровневой прошивки через Web Serial -->
     <script src="https://unpkg.com"></script>
     <style>
         :root {
@@ -50,7 +50,7 @@
         }
 
         .cyber-panel::before {
-            content: 'NET.DIRECT // 2026';
+            content: 'LOCAL_HOST // INTERNAL_NET';
             position: absolute;
             top: 8px;
             right: 40px;
@@ -148,7 +148,6 @@
             pointer-events: none;
         }
 
-        /* Кнопка ПРОШИТЬ в стиле Киберпанк */
         .cyber-btn {
             width: 100%;
             padding: 16px;
@@ -181,10 +180,9 @@
             cursor: not-allowed;
         }
 
-        /* Секция прогресса и логов */
         .progress-section {
             margin-top: 35px;
-            display: none; /* Появляется только при старте */
+            display: none;
         }
 
         .progress-info {
@@ -233,10 +231,10 @@
 <body>
 
 <div class="cyber-panel">
-    <h1>FLASHER // OS</h1>
+    <h1>SPARK-OS // FLASHER</h1>
     <div class="status-grid">
         <div><span id="dot-indicator" class="status-dot"></span>SYS_STATUS: <span id="panel-status-text">READY</span></div>
-        <div>LINK: WEB_SERIAL</div>
+        <div>LINK: INTERNAL_FETCH</div>
     </div>
 
     <div class="form-group">
@@ -249,7 +247,6 @@
         </div>
     </div>
 
-    <!-- Настоящая кнопка прошивки -->
     <button id="flash-btn" class="cyber-btn">Initialize Flash</button>
 
     <!-- Выезжающий неоновый прогресс-бар -->
@@ -267,11 +264,12 @@
 
 <script>
     // =========================================================================
-    // ВСТАВЬТЕ СЮДА ВАШИ ССЫЛКИ НА .BIN ФАЙЛЫ
+    // ИСПРАВЛЕННЫЕ ОТНОСИТЕЛЬНЫЕ ССЫЛКИ ДЛЯ GITHUB PAGES (БЕЗ CORS ОШИБОК)
+    // Убедитесь, что папки в вашем репозитории SparkOS называются именно так
     // =========================================================================
     const FIRMWARE_LINKS = {
-        esp32s3: "https://github.com/void-main-sketch/SparkOS/raw/refs/heads/main/firmware/esp32-S3-SparkOS/build/esp32-S3-SparkOS.bin", 
-        esp8266: "https://github.com/void-main-sketch/SparkOS/raw/refs/heads/main/firmware/esp8266-SparkOS/build/esp8266-SparkOS.bin"  
+        esp32s3: "./firmware/esp32s3-SparkOS/build/esp32s3-SparkOS.bin", 
+        esp8266: "./firmware/esp8266-SparkOS/build/esp8266-SparkOS.bin"  
     };
     // =========================================================================
 
@@ -292,79 +290,76 @@
 
     flashBtn.addEventListener('click', async () => {
         if (!('serial' in navigator)) {
-            alert('Критическая ошибка: Браузер не поддерживает Web Serial API. Откройте страницу в Chrome или Edge.');
+            alert('Критическая ошибка: Ваш браузер не поддерживает Web Serial API. Используйте последние версии Google Chrome или Microsoft Edge.');
             return;
         }
 
         const selectedBoard = boardSelect.value;
-        const targetUrl = FIRMWARE_LINKS[selectedBoard];
+        const internalUrl = FIRMWARE_LINKS[selectedBoard];
 
-        // Используем прокси, чтобы ПОЛНОСТЬЮ убрать ошибку Failed to fetch
-        const secureProxyUrl = "https://corsproxy.io?" + encodeURIComponent(targetUrl);
-
-        // Переводим интерфейс в состояние загрузки
+        // Блокируем элементы управления, открываем блок прогресса
         flashBtn.disabled = true;
         boardSelect.disabled = true;
         progressArea.style.display = 'block';
         dotIndicator.classList.add('active');
         panelStatusText.innerText = "BUSY";
-        terminalLog.innerText = "[SYS] Запуск протокола загрузки...";
+        terminalLog.innerText = "[SYS] Запуск внутреннего HTTP-протокола...";
 
         try {
-            printTerminal("Подключение к облаку...");
-            taskStatus.innerText = "DOWNLOADING FMW...";
+            printTerminal(`Запрос к внутреннему хранилищу: ${internalUrl}`);
+            taskStatus.innerText = "DOWNLOADING...";
             
-            const response = await fetch(secureProxyUrl);
-            if (!response.ok) throw new Error("Сервер не ответил на запрос прошивки.");
+            // Скачиваем файл из того же репозитория (внутренний запрос без CORS)
+            const response = await fetch(internalUrl);
+            if (!response.ok) throw new Error(`Файл не найден. Код ошибки: ${response.status}. Проверьте пути к .bin файлам.`);
             
             const arrayBuffer = await response.arrayBuffer();
             const binaryData = new Uint8Array(arrayBuffer);
             
-            printTerminal(`Успешно кэшировано: ${binaryData.length} байт.`);
-            printTerminal("Запрос доступа к COM-порту устройства...");
-            taskStatus.innerText = "SELECT COM-PORT...";
+            printTerminal(`Успешно кэшировано: ${(binaryData.length / 1024).toFixed(1)} КБ.`);
+            printTerminal("Инициализация Web Serial. Выберите COM-порт в окне браузера...");
+            taskStatus.innerText = "SELECT PORT...";
 
-            // Открываем порт через библиотеку Espruino
+            // Инициализация COM-порта
             Espruino.Core.Serial.open(async (connectionInfo) => {
                 if (!connectionInfo) {
-                    printTerminal("ОТМЕНА: Порт не выбран пользователем.");
+                    printTerminal("ОТМЕНА: Доступ к COM-порту отклонен.");
                     resetSystem("PORT ERROR");
                     return;
                 }
 
-                printTerminal("Порт соединен. Синхронизация чипа...");
+                printTerminal("Линия связи установлена. Запуск циклической перезаписи...");
                 taskStatus.innerText = "FLASHING...";
 
-                // Шьем single-bin файлы на базовый адрес 0x0
+                // Базовое смещение для single-bin образов
                 const writeOffsetAddress = 0x0000;
 
-                // Запуск процесса прошивки с отслеживанием прогресса в реальном времени
+                // Запуск прошивки платы с обновлением прогресс-бара на странице
                 Espruino.Core.Flasher.flash(binaryData, writeOffsetAddress, (bytesSent, bytesTotal) => {
                     const currentPercent = Math.round((bytesSent / bytesTotal) * 100);
                     
-                    // Обновляем шкалу и проценты прямо на странице
+                    // Обновление неонового бара и текстового процента в реальном времени
                     progressFill.style.width = `${currentPercent}%`;
                     percentCounter.innerText = `${currentPercent}%`;
-                    printTerminal(`Запись блока: ${bytesSent}/${bytesTotal} B`);
+                    printTerminal(`Запись секторов: ${bytesSent}/${bytesTotal} байт`);
                 }, (err) => {
                     if (err) {
-                        printTerminal(`ОШИБКА ЗАПИСИ: ${err}`);
+                        printTerminal(`КРИТИЧЕСКИЙ СБОЙ ЗАПИСИ: ${err}`);
                         resetSystem("FAIL");
                     } else {
                         progressFill.style.width = '100%';
                         percentCounter.innerText = '100%';
-                        printTerminal("🎉 УСПЕХ! Прошивка успешно загружена. Устройство перезагружается.");
+                        printTerminal("🎉 СИНХРОНИЗАЦИЯ ЗАВЕРШЕНА! Прошивка успешно установлена. Перезапуск ядра...");
                         taskStatus.innerText = "SUCCESS // DONE";
                         panelStatusText.innerText = "SUCCESS";
                         dotIndicator.classList.remove('active');
-                        // Оставляем кнопку заблокированной, сигнализируя об успехе
                     }
                 });
             });
 
         } catch (error) {
-            printTerminal(`КРИТИЧЕСКИЙ СБОЙ: ${error.message}`);
-            resetSystem("FETCH ERROR");
+            printTerminal(`ОШИБКА МАРШРУТИЗАЦИИ: ${error.message}`);
+            resetSystem("IO ERROR");
         }
     });
 
@@ -373,7 +368,7 @@
         boardSelect.disabled = false;
         dotIndicator.classList.remove('active');
         panelStatusText.innerText = statusLabel;
-        taskStatus.innerText = "INTERRUPTED";
+        taskStatus.innerText = "TERMINATED";
     }
 </script>
 
