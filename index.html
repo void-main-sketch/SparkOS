@@ -3,26 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP Web Flasher Pro</title>
-    <!-- Официальная библиотека для прошивки через Web Serial API -->
-    <script src="https://unpkg.com"></script>
+    <title>ESP Installer Pro</title>
+    <!-- Подключение официального скрипта ESP Web Tools -->
+    <script type="module" src="https://unpkg.com"></script>
     <style>
         :root {
-            --bg-dark: #090d16;
-            --panel-bg: #131926;
-            --panel-border: #222f47;
-            --accent: #3b82f6;
-            --accent-hover: #1d4ed8;
-            --success: #10b981;
-            --error: #ef4444;
+            --bg-color: #0b0f19;
+            --card-bg: #151d30;
+            --border-color: #263554;
             --text-main: #f8fafc;
             --text-muted: #64748b;
-            --input-bg: #1e293b;
+            --accent: #2563eb;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-dark);
+            background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
             padding: 20px;
@@ -34,21 +30,21 @@
         }
 
         .card {
-            background-color: var(--panel-bg);
-            border: 1px solid var(--panel-border);
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
             border-radius: 20px;
             padding: 40px;
             width: 100%;
-            max-width: 500px;
+            max-width: 440px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
         }
 
         h1 {
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 800;
             margin: 0 0 8px 0;
-            text-align: center;
-            background: linear-gradient(to right, #ef4444, #3b82f6);
+            background: linear-gradient(to right, #3b82f6, #10b981);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -56,302 +52,109 @@
         .subtitle {
             color: var(--text-muted);
             font-size: 14px;
-            text-align: center;
-            margin-bottom: 36px;
+            margin-bottom: 32px;
         }
 
-        .step-box {
-            background-color: rgba(34, 47, 71, 0.3);
-            border: 1px solid var(--panel-border);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 24px;
+        .form-group {
+            margin-bottom: 32px;
+            text-align: left;
         }
 
-        .step-title {
+        label {
+            display: block;
             font-size: 12px;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: var(--accent);
-            margin-bottom: 12px;
-            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 8px;
         }
 
-        select, .file-input-label {
+        select {
             width: 100%;
             padding: 14px 16px;
-            background-color: var(--input-bg);
-            border: 1px solid var(--panel-border);
+            background-color: #1e293b;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             color: var(--text-main);
             font-size: 15px;
             outline: none;
-            transition: all 0.2s ease;
+            cursor: pointer;
             box-sizing: border-box;
         }
 
-        select:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-        }
-
-        .file-wrapper {
-            position: relative;
-        }
-
-        input[type="file"] {
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
+        /* Кастомизация встроенной кнопки ESP Web Tools под общий дизайн */
+        esp-web-install-button {
+            display: block;
             width: 100%;
-            height: 100%;
-            cursor: pointer;
-        }
-
-        .file-input-label {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            background-color: #1e293b;
-            font-weight: 500;
-            border-style: dashed;
-        }
-
-        .file-input-label.loaded {
-            border-style: solid;
-            border-color: var(--success);
-            background-color: rgba(16, 185, 129, 0.05);
-        }
-
-        .btn-flash {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, var(--accent) 0%, #1d4ed8 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-            transition: all 0.2s ease;
-        }
-
-        .btn-flash:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-        }
-
-        .btn-flash:active:not(:disabled) {
-            transform: translateY(1px);
-        }
-
-        .btn-flash:disabled {
-            background: var(--panel-border);
-            color: var(--text-muted);
-            box-shadow: none;
-            cursor: not-allowed;
-        }
-
-        .status-section {
-            margin-top: 32px;
-        }
-
-        .status-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-
-        #status-text {
-            font-weight: 700;
-            color: var(--text-muted);
-        }
-
-        #status-text.working { color: var(--accent); }
-        #status-text.done { color: var(--success); }
-        #status-text.fail { color: var(--error); }
-
-        .progress-bar {
-            width: 100%;
-            height: 6px;
-            background-color: var(--input-bg);
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 16px;
-        }
-
-        .progress-fill {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(to right, var(--accent), var(--success));
-            transition: width 0.2s ease;
-        }
-
-        #console-log {
-            width: 100%;
-            height: 140px;
-            background-color: #05070c;
-            border: 1px solid var(--panel-border);
-            border-radius: 8px;
-            padding: 14px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 12px;
-            color: #34d399;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            box-sizing: border-box;
-            box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+            --ewt-button-bg-color: #2563eb;
+            --ewt-button-hover-bg-color: #1d4ed8;
+            --ewt-button-text-color: #ffffff;
+            --ewt-button-border-radius: 10px;
+            font-family: inherit;
         }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h1>ESP Web Flasher Pro</h1>
-    <div class="subtitle">Локальная прошивка плат через Web Serial API</div>
+    <h1>ESP Web Flasher</h1>
+    <div class="subtitle">Установка прошивки в один клик прямо из браузера</div>
 
-    <!-- Шаг 1: Выбор архитектуры чипа -->
-    <div class="step-box">
-        <div class="step-title">Шаг 1: Выберите архитектуру чипа</div>
-        <select id="chip-select">
-            <option value="0x0000">ESP8266 (Смещение 0x0000)</option>
-            <option value="0x0000">ESP32-S3 (Single Factory BIN / Смещение 0x0000)</option>
-            <option value="0x10000">ESP32-S3 (Стандартное приложение / Смещение 0x10000)</option>
+    <div class="form-group">
+        <label for="board-select">Выберите вашу плату</label>
+        <select id="board-select">
+            <option value="esp32s3">ESP32-S3 (1 BIN)</option>
+            <option value="esp8266">ESP8266 (1 BIN)</option>
         </select>
     </div>
 
-    <!-- Шаг 2: Выбор файла прошивки -->
-    <div class="step-box">
-        <div class="step-title">Шаг 2: Выберите файл прошивки (.bin)</div>
-        <div class="file-wrapper">
-            <div id="file-label" class="file-input-label">Открыть файл прошивки...</div>
-            <input type="file" id="file-input" accept=".bin">
-        </div>
-    </div>
-
-    <!-- Кнопка запуска -->
-    <button id="action-btn" class="btn-flash" disabled>Подключить устройство и прошить</button>
-
-    <!-- Секция статуса и прогресса -->
-    <div class="status-section">
-        <div class="status-header">
-            <span>Статус: <span id="status-text">Ожидание файла</span></span>
-            <span id="percent-text" style="font-weight: bold; color: var(--accent);">0%</span>
-        </div>
-        <div class="progress-bar">
-            <div id="progress-fill" class="progress-fill"></div>
-        </div>
-        <div id="console-log">Готов к работе. Выберите .bin файл на компьютере для начала.</div>
-    </div>
+    <!-- Компонент официальной кнопки ESP Web Tools -->
+    <esp-web-install-button id="install-btn"></esp-web-install-button>
 </div>
 
 <script>
-    const chipSelect = document.getElementById('chip-select');
-    const fileInput = document.getElementById('file-input');
-    const fileLabel = document.getElementById('file-label');
-    const actionBtn = document.getElementById('action-btn');
-    const statusText = document.getElementById('status-text');
-    const percentText = document.getElementById('percent-text');
-    const progressFill = document.getElementById('progress-fill');
-    const consoleLog = document.getElementById('console-log');
+    // ==========================================
+    // МЕСТО ДЛЯ ТВОИХ ССЫЛОК НА .BIN ФАЙЛЫ
+    // ==========================================
+    const FIRMWARE_LINKS = {
+        esp32s3: "https://yourdomain.com", // Прямая ссылка на бинарник ESP32-S3
+        esp8266: "https://yourdomain.com"  // Прямая ссылка на бинарник ESP8266
+    };
+    // ==========================================
 
-    let binaryData = null;
+    const boardSelect = document.getElementById('board-select');
+    const installBtn = document.getElementById('install-btn');
 
-    function printLog(msg) {
-        consoleLog.innerText += `\n[${new Date().toLocaleTimeString()}] ${msg}`;
-        consoleLog.scrollTop = consoleLog.scrollHeight;
-    }
+    // Функция генерации и обновления манифеста "на лету" без физического JSON файла
+    function updateManifest() {
+        const selectedBoard = boardSelect.value;
+        const binUrl = FIRMWARE_LINKS[selectedBoard];
 
-    function changeStatus(text, className) {
-        statusText.innerText = text;
-        statusText.className = className;
-    }
-
-    // Обработка выбора локального файла (.bin)
-    fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const arrayBuffer = event.target.result;
-            binaryData = new Uint8Array(arrayBuffer);
-            
-            fileLabel.innerText = `📁 ${file.name} (${Math.toLocaleTimeString ? (file.size / 1024).toFixed(1) : file.size} КБ)`;
-            fileLabel.classList.add('loaded');
-            
-            actionBtn.disabled = false;
-            changeStatus("Готов к прошивке", "");
-            printLog(`Файл "${file.name}" успешно загружен в буфер браузера.`);
-        };
-        reader.readAsArrayBuffer(file);
-    });
-
-    // Клик по кнопке "Подключить и прошить"
-    actionBtn.addEventListener('click', async () => {
-        if (!('serial' in navigator)) {
-            alert('Ваш браузер не поддерживает Web Serial API. Откройте эту страницу в Google Chrome, Opera или Microsoft Edge.');
-            return;
-        }
-
-        if (!binaryData) {
-            alert('Пожалуйста, выберите файл прошивки сначала.');
-            return;
-        }
-
-        actionBtn.disabled = true;
-        fileInput.disabled = true;
-        chipSelect.disabled = true;
-        
-        consoleLog.innerText = "[Система] Инициализация COM-порта...";
-        changeStatus("Выбор порта...", "working");
-
-        // Запрашиваем доступ к COM-порту и инициируем загрузку через Espruino Web Tools
-        Espruino.Core.Serial.open(async (connectionInfo) => {
-            if (!connectionInfo) {
-                printLog("Ошибка: Доступ к COM-порту не предоставлен или порт занят другим приложением.");
-                changeStatus("Ошибка порта", "fail");
-                resetUI();
-                return;
-            }
-
-            printLog("Порт успешно открыт. Очистка памяти и подготовка чипа...");
-            changeStatus("Прошивка...", "working");
-
-            const offsetAddress = parseInt(chipSelect.value, 16);
-            printLog(`Используется адрес смещения: ${chipSelect.value}`);
-
-            // Вызов метода прошивки внутренней библиотеки esptool.js
-            Espruino.Core.Flasher.flash(binaryData, offsetAddress, (sent, total) => {
-                const percentage = Math.round((sent / total) * 100);
-                progressFill.style.width = `${percentage}%`;
-                percentText.innerText = `${percentage}%`;
-                printLog(`Отправлено: ${sent} / ${total} байт (${percentage}%)`);
-            }, (err) => {
-                if (err) {
-                    printLog(`Критическая ошибка при записи: ${err}`);
-                    changeStatus("Сбой записи", "fail");
-                } else {
-                    progressFill.style.width = '100%';
-                    percentText.innerText = '100%';
-                    printLog("🎉 Успех! Прошивка успешно загружена в контроллер. Устройство перезагружается...");
-                    changeStatus("Готово!", "done");
+        // Генерируем конфигурацию манифеста, которую требует ESP Web Tools
+        const manifest = {
+            name: selectedBoard.toUpperCase() + " Firmware",
+            version: "1.0.0",
+            builds: [
+                {
+                    chipFamily: selectedBoard === "esp8266" ? "ESP8266" : "ESP32-S3",
+                    parts: [
+                        { path: binUrl, offset: 0 } // Запись single-bin прошивки
+                    ]
                 }
-                resetUI();
-            });
-        });
-    });
+            ]
+        };
 
-    function resetUI() {
-        actionBtn.disabled = false;
-        fileInput.disabled = false;
-        chipSelect.disabled = false;
+        // Превращаем объект в безопасную Data URL ссылку, чтобы избежать ошибок fetch/CORS
+        const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+        installBtn.manifest = URL.createObjectURL(manifestBlob);
     }
+
+    // Слушаем выбор пользователя в выпадающем списке
+    boardSelect.addEventListener('change', updateManifest);
+
+    // Инициализация при первой загрузке страницы
+    updateManifest();
 </script>
 
 </body>
