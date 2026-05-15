@@ -3,27 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP Flasher Web Tools</title>
-    <!-- Подключение библиотеки Espruino для работы с прошивками через Web Serial -->
+    <title>ESP Web Flasher Pro</title>
+    <!-- Официальная библиотека для прошивки через Web Serial API -->
     <script src="https://unpkg.com"></script>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
+            --bg-dark: #090d16;
+            --panel-bg: #131926;
+            --panel-border: #222f47;
+            --accent: #3b82f6;
+            --accent-hover: #1d4ed8;
             --success: #10b981;
-            --border: #334155;
+            --error: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #64748b;
+            --input-bg: #1e293b;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-dark);
             color: var(--text-main);
             margin: 0;
-            padding: 40px 20px;
+            padding: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -31,279 +33,325 @@
             box-sizing: border-box;
         }
 
-        .container {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 32px;
+        .card {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            padding: 40px;
             width: 100%;
-            max-width: 480px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
         h1 {
-            font-size: 24px;
-            font-weight: 700;
-            margin-top: 0;
-            margin-bottom: 8px;
+            font-size: 26px;
+            font-weight: 800;
+            margin: 0 0 8px 0;
             text-align: center;
+            background: linear-gradient(to right, #ef4444, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .subtitle {
             color: var(--text-muted);
             font-size: 14px;
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 36px;
         }
 
-        .form-group {
+        .step-box {
+            background-color: rgba(34, 47, 71, 0.3);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 20px;
             margin-bottom: 24px;
         }
 
-        label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--text-muted);
+        .step-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--accent);
+            margin-bottom: 12px;
+            font-weight: 700;
         }
 
-        select {
+        select, .file-input-label {
             width: 100%;
-            padding: 12px 16px;
-            background-color: var(--bg-color);
-            border: 1px solid var(--border);
+            padding: 14px 16px;
+            background-color: var(--input-bg);
+            border: 1px solid var(--panel-border);
             border-radius: 8px;
             color: var(--text-main);
-            font-size: 16px;
+            font-size: 15px;
             outline: none;
-            transition: border-color 0.2s;
-            cursor: pointer;
+            transition: all 0.2s ease;
             box-sizing: border-box;
         }
 
         select:focus {
-            border-color: var(--primary);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
         }
 
-        .btn {
+        .file-wrapper {
+            position: relative;
+        }
+
+        input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
             width: 100%;
-            padding: 14px;
-            background-color: var(--primary);
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background-color: #1e293b;
+            font-weight: 500;
+            border-style: dashed;
+        }
+
+        .file-input-label.loaded {
+            border-style: solid;
+            border-color: var(--success);
+            background-color: rgba(16, 185, 129, 0.05);
+        }
+
+        .btn-flash {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent) 0%, #1d4ed8 100%);
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            transition: all 0.2s ease;
         }
 
-        .btn:hover {
-            background-color: var(--primary-hover);
+        .btn-flash:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
         }
 
-        .btn:active {
-            transform: scale(0.98);
+        .btn-flash:active:not(:disabled) {
+            transform: translateY(1px);
         }
 
-        .btn:disabled {
-            background-color: var(--border);
+        .btn-flash:disabled {
+            background: var(--panel-border);
             color: var(--text-muted);
+            box-shadow: none;
             cursor: not-allowed;
-            transform: none;
         }
 
-        .status-container {
-            margin-top: 24px;
-            border-top: 1px solid var(--border);
-            padding-top: 24px;
+        .status-section {
+            margin-top: 32px;
         }
 
         .status-header {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             font-size: 14px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
-        .status-text {
-            font-weight: 600;
+        #status-text {
+            font-weight: 700;
             color: var(--text-muted);
         }
 
-        .status-text.active {
-            color: var(--primary);
-        }
-
-        .status-text.success {
-            color: var(--success);
-        }
+        #status-text.working { color: var(--accent); }
+        #status-text.done { color: var(--success); }
+        #status-text.fail { color: var(--error); }
 
         .progress-bar {
             width: 100%;
-            height: 8px;
-            background-color: var(--bg-color);
-            border-radius: 4px;
+            height: 6px;
+            background-color: var(--input-bg);
+            border-radius: 10px;
             overflow: hidden;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
         }
 
         .progress-fill {
             width: 0%;
             height: 100%;
-            background-color: var(--primary);
-            transition: width 0.3s ease;
+            background: linear-gradient(to right, var(--accent), var(--success));
+            transition: width 0.2s ease;
         }
 
-        #log {
+        #console-log {
             width: 100%;
-            height: 120px;
-            background-color: var(--bg-color);
-            border: 1px solid var(--border);
+            height: 140px;
+            background-color: #05070c;
+            border: 1px solid var(--panel-border);
             border-radius: 8px;
-            padding: 12px;
-            font-family: monospace;
+            padding: 14px;
+            font-family: 'Courier New', Courier, monospace;
             font-size: 12px;
-            color: #a7f3d0;
+            color: #34d399;
             overflow-y: auto;
             white-space: pre-wrap;
             box-sizing: border-box;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>ESP Web Flasher</h1>
-    <div class="subtitle">Прошивка плат через COM-порт браузера</div>
+<div class="card">
+    <h1>ESP Web Flasher Pro</h1>
+    <div class="subtitle">Локальная прошивка плат через Web Serial API</div>
 
-    <div class="form-group">
-        <label for="firmware-select">Выберите тип платы и прошивку</label>
-        <select id="firmware-select">
-            <option value="esp32s3">ESP32-S3 (1 BIN)</option>
-            <option value="esp8266">ESP8266 (1 BIN)</option>
+    <!-- Шаг 1: Выбор архитектуры чипа -->
+    <div class="step-box">
+        <div class="step-title">Шаг 1: Выберите архитектуру чипа</div>
+        <select id="chip-select">
+            <option value="0x0000">ESP8266 (Смещение 0x0000)</option>
+            <option value="0x0000">ESP32-S3 (Single Factory BIN / Смещение 0x0000)</option>
+            <option value="0x10000">ESP32-S3 (Стандартное приложение / Смещение 0x10000)</option>
         </select>
     </div>
 
-    <button id="flash-btn" class="btn">Подключиться и прошить</button>
+    <!-- Шаг 2: Выбор файла прошивки -->
+    <div class="step-box">
+        <div class="step-title">Шаг 2: Выберите файл прошивки (.bin)</div>
+        <div class="file-wrapper">
+            <div id="file-label" class="file-input-label">Открыть файл прошивки...</div>
+            <input type="file" id="file-input" accept=".bin">
+        </div>
+    </div>
 
-    <div class="status-container">
+    <!-- Кнопка запуска -->
+    <button id="action-btn" class="btn-flash" disabled>Подключить устройство и прошить</button>
+
+    <!-- Секция статуса и прогресса -->
+    <div class="status-section">
         <div class="status-header">
-            <span>Статус: <span id="status-label" class="status-text">Ожидание</span></span>
-            <span id="progress-percent">0%</span>
+            <span>Статус: <span id="status-text">Ожидание файла</span></span>
+            <span id="percent-text" style="font-weight: bold; color: var(--accent);">0%</span>
         </div>
         <div class="progress-bar">
             <div id="progress-fill" class="progress-fill"></div>
         </div>
-        <label>Лог процесса</label>
-        <div id="log">Нажмите кнопку выше для начала работы...</div>
+        <div id="console-log">Готов к работе. Выберите .bin файл на компьютере для начала.</div>
     </div>
 </div>
 
 <script>
-    // ==========================================
-    // МЕСТО ДЛЯ ВСТАВКИ ССЫЛОК НА ТВОИ .BIN ФАЙЛЫ
-    // ==========================================
-    const FIRMWARE_URLS = {
-        esp32s3: "https://github.com/void-main-sketch/SparkOS/raw/refs/heads/main/firmware/esp32-S3-SparkOS/build/esp32-S3-SparkOS.bin", // Ссылка на бинарник для ESP32-S3
-        esp8266: "https://yourdomain.com"  // Ссылка на бинарник для ESP8266
-    };
-    // ==========================================
-
-    const flashBtn = document.getElementById('flash-btn');
-    const firmwareSelect = document.getElementById('firmware-select');
-    const statusLabel = document.getElementById('status-label');
-    const progressPercent = document.getElementById('progress-percent');
+    const chipSelect = document.getElementById('chip-select');
+    const fileInput = document.getElementById('file-input');
+    const fileLabel = document.getElementById('file-label');
+    const actionBtn = document.getElementById('action-btn');
+    const statusText = document.getElementById('status-text');
+    const percentText = document.getElementById('percent-text');
     const progressFill = document.getElementById('progress-fill');
-    const logTextarea = document.getElementById('log');
+    const consoleLog = document.getElementById('console-log');
 
-    function log(message) {
-        logTextarea.innerText += message + "\n";
-        logTextarea.scrollTop = logTextarea.scrollHeight;
+    let binaryData = null;
+
+    function printLog(msg) {
+        consoleLog.innerText += `\n[${new Date().toLocaleTimeString()}] ${msg}`;
+        consoleLog.scrollTop = consoleLog.scrollHeight;
     }
 
-    function setStatus(text, type = 'active') {
-        statusLabel.innerText = text;
-        statusLabel.className = 'status-text ' + type;
+    function changeStatus(text, className) {
+        statusText.innerText = text;
+        statusText.className = className;
     }
 
-    function updateProgress(percentage) {
-        progressPercent.innerText = percentage + "%";
-        progressFill.style.width = percentage + "%";
-    }
+    // Обработка выбора локального файла (.bin)
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
 
-    flashBtn.addEventListener('click', async () => {
-        // Проверка поддержки Web Serial API браузером
-        if (!('serial' in navigator)) {
-            alert('Ваш браузер не поддерживает Web Serial API. Используйте Google Chrome или Microsoft Edge.');
-            return;
-        }
-
-        const selectedBoard = firmwareSelect.value;
-        const binUrl = FIRMWARE_URLS[selectedBoard];
-
-        if (!binUrl || binUrl.includes("yourdomain.com")) {
-            alert('Пожалуйста, укажите корректные ссылки на .bin файлы в коде скрипта!');
-            return;
-        }
-
-        logTextarea.innerText = ""; // Очистка лога
-        flashBtn.disabled = true;
-        updateProgress(0);
-
-        try {
-            log("Загрузка файла прошивки в память браузера...");
-            setStatus("Скачивание прошивки...");
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const arrayBuffer = event.target.result;
+            binaryData = new Uint8Array(arrayBuffer);
             
-            const response = await fetch(binUrl);
-            if (!response.ok) throw new Error(`Не удалось скачать файл по ссылке: ${binUrl}`);
-            const arrayBuffer = await response.arrayBuffer();
-            const firmwareBinary = new Uint8Array(arrayBuffer);
+            fileLabel.innerText = `📁 ${file.name} (${Math.toLocaleTimeString ? (file.size / 1024).toFixed(1) : file.size} КБ)`;
+            fileLabel.classList.add('loaded');
             
-            log(`Файл успешно загружен. Размер: ${firmwareBinary.length} байт.`);
-            setStatus("Выбор COM-порта...");
-
-            // Инициализация утилиты прошивки Espruino
-            // Библиотека автоматически запрашивает доступ к COM-порту через браузер
-            Espruino.Core.Serial.open(async (connectionInfo) => {
-                if (!connectionInfo) {
-                    log("Ошибка: Порт не выбран или занят.");
-                    setStatus("Ошибка порта", "error");
-                    flashBtn.disabled = false;
-                    return;
-                }
-
-                log("Порт успешно открыт. Определение чипа и подготовка к прошивке...");
-                setStatus("Прошивка устройства...");
-
-                // Настройки адресации: для полноценных single-bin файлов обычно используется адрес 0x0
-                const flashAddress = 0x0000;
-
-                // Запуск процесса прошивки через встроенные методы библиотеки (эмуляция esptool)
-                Espruino.Core.Flasher.flash(firmwareBinary, flashAddress, (progress, total) => {
-                    const pct = Math.round((progress / total) * 100);
-                    updateProgress(pct);
-                    log(`Запись: ${progress}/${total} байт (${pct}%)`);
-                }, (err) => {
-                    if (err) {
-                        log(`Ошибка прошивки: ${err}`);
-                        setStatus("Сбой прошивки", "error");
-                    } else {
-                        log("Успешно! Прошивка полностью записана в микроконтроллер.");
-                        setStatus("Готово!", "success");
-                        updateProgress(100);
-                    }
-                    flashBtn.disabled = false;
-                });
-            });
-
-        } catch (error) {
-            log(`Критическая ошибка: ${error.message}`);
-            setStatus("Ошибка", "error");
-            flashBtn.disabled = false;
-        }
+            actionBtn.disabled = false;
+            changeStatus("Готов к прошивке", "");
+            printLog(`Файл "${file.name}" успешно загружен в буфер браузера.`);
+        };
+        reader.readAsArrayBuffer(file);
     });
+
+    // Клик по кнопке "Подключить и прошить"
+    actionBtn.addEventListener('click', async () => {
+        if (!('serial' in navigator)) {
+            alert('Ваш браузер не поддерживает Web Serial API. Откройте эту страницу в Google Chrome, Opera или Microsoft Edge.');
+            return;
+        }
+
+        if (!binaryData) {
+            alert('Пожалуйста, выберите файл прошивки сначала.');
+            return;
+        }
+
+        actionBtn.disabled = true;
+        fileInput.disabled = true;
+        chipSelect.disabled = true;
+        
+        consoleLog.innerText = "[Система] Инициализация COM-порта...";
+        changeStatus("Выбор порта...", "working");
+
+        // Запрашиваем доступ к COM-порту и инициируем загрузку через Espruino Web Tools
+        Espruino.Core.Serial.open(async (connectionInfo) => {
+            if (!connectionInfo) {
+                printLog("Ошибка: Доступ к COM-порту не предоставлен или порт занят другим приложением.");
+                changeStatus("Ошибка порта", "fail");
+                resetUI();
+                return;
+            }
+
+            printLog("Порт успешно открыт. Очистка памяти и подготовка чипа...");
+            changeStatus("Прошивка...", "working");
+
+            const offsetAddress = parseInt(chipSelect.value, 16);
+            printLog(`Используется адрес смещения: ${chipSelect.value}`);
+
+            // Вызов метода прошивки внутренней библиотеки esptool.js
+            Espruino.Core.Flasher.flash(binaryData, offsetAddress, (sent, total) => {
+                const percentage = Math.round((sent / total) * 100);
+                progressFill.style.width = `${percentage}%`;
+                percentText.innerText = `${percentage}%`;
+                printLog(`Отправлено: ${sent} / ${total} байт (${percentage}%)`);
+            }, (err) => {
+                if (err) {
+                    printLog(`Критическая ошибка при записи: ${err}`);
+                    changeStatus("Сбой записи", "fail");
+                } else {
+                    progressFill.style.width = '100%';
+                    percentText.innerText = '100%';
+                    printLog("🎉 Успех! Прошивка успешно загружена в контроллер. Устройство перезагружается...");
+                    changeStatus("Готово!", "done");
+                }
+                resetUI();
+            });
+        });
+    });
+
+    function resetUI() {
+        actionBtn.disabled = false;
+        fileInput.disabled = false;
+        chipSelect.disabled = false;
+    }
 </script>
 
 </body>
